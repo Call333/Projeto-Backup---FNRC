@@ -32,6 +32,7 @@ public class Cliente {
                         transmitir_arquivos(sc);
                         break;
                     case 2:
+                        listar_arquivos_usuario(sc);
                         break;
                     case 3:
                         break;
@@ -91,7 +92,7 @@ public class Cliente {
             return;
         }
 
-        try (Socket socket = new Socket("localhost", 10000);
+        try (Socket socket = new Socket(ipCoordenador, portaCoordenador);
                 DataInputStream in = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                 FileInputStream fis = new FileInputStream(arquivo)) {
@@ -119,7 +120,26 @@ public class Cliente {
         }
     }
 
-    private static void listar_arquivos_usuario() {
+    private static void listar_arquivos_usuario(Scanner sc) {
+        System.out.println("\n --- arquivos ---");
+
+        try (Socket socket = new Socket(ipCoordenador, portaCoordenador);
+                DataInputStream in = new DataInputStream(socket.getInputStream());
+                DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
+            out.writeUTF("LISTAR_ARQUIVOS");
+            out.writeUTF(apelido);
+            out.flush();
+            
+            int total = in.readInt();
+            System.out.println("-- Arquivos registrados --");
+            for (int i = 0; i < total; i++) {
+                int id = in.readInt();
+                String nome = in.readUTF();
+                System.out.printf("ID: %d | %s%n",id, nome);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
 }
