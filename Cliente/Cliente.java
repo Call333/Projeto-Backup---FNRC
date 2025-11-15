@@ -96,7 +96,7 @@ public class Cliente {
                 DataInputStream in = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                 FileInputStream fis = new FileInputStream(arquivo)) {
-            out.writeUTF("TRANSMITINDO_ARQUIVOS");
+            out.writeUTF("TRANSMITIR_ARQUIVOS");
             out.writeUTF(apelido);
             out.writeUTF(arquivo.getName());
             out.writeLong(arquivo.length());
@@ -129,17 +129,30 @@ public class Cliente {
             out.writeUTF("LISTAR_ARQUIVOS");
             out.writeUTF(apelido);
             out.flush();
-            
+
             int total = in.readInt();
             System.out.println("-- Arquivos registrados --");
             for (int i = 0; i < total; i++) {
                 int id = in.readInt();
                 String nome = in.readUTF();
-                System.out.printf("ID: %d | %s%n",id, nome);
+                System.out.printf("ID: %d | %s%n", id, nome);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+    }
+
+    private static void baixar_arquivos(Scanner sc) {
+        System.out.println("Identificador do arquivo: ");
+        int id = sc.nextInt();
+
+        try (Socket socket = new Socket(ipCoordenador, portaCoordenador);
+                DataInputStream in = new DataInputStream(socket.getInputStream());
+                DataOutputStream out = new DataOutputStream(socket.getOutputStream());) {
+            out.writeUTF("BAIXAR_ARQUIVOS");
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
     }
 }
