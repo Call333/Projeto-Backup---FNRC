@@ -1,7 +1,109 @@
 package Cliente;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.net.Socket;
+import java.util.Scanner;
+
 public class Cliente {
-    
+    private static String apelido;
+    private static String pastaDownload;
+    private static String ipCoordenador;
+    private static int portaCoordenador = 10000;
     
 
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("\n-- Cliente Backup --");
+            System.out.println("1. Transmitir Arquivos");
+            System.out.println("2. Listar arquivos disponíveis por apelido");
+            System.out.println("3. Baixar arquivos");
+            System.out.println("4. Configurações");
+            System.out.println("5. Sair");
+            int opcao = sc.nextInt();
+            sc.nextLine();
+
+            try {
+                switch (opcao) {
+                    case 1:
+                        transmitir_arquivos(sc);
+                        break;
+                    case 2:
+                        break;
+                    case 3:
+                        break;
+                    case 4:
+                        configuracoes(sc);
+                        break;
+                    case 5:
+                        System.out.println("Saindo...");
+                        break;
+                    default:
+                        System.out.println("Opção invalida!");
+                        break;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    private static void configuracoes(Scanner sc) {
+        System.out.println("\nConfigurações:");
+        System.out.println("(a) Configurar apelido");
+        System.out.println("(b) Configurar diretório de download");
+        System.out.println("(c) Configurar endereço IP do Coordenador");
+        String opcao = sc.next();
+
+        try {
+            switch (opcao) {
+                case "a":
+                    System.out.println("Apelido: ");
+                    apelido = sc.next();
+                    break;
+                case "b":
+                    System.out.println("Diretório: ");
+                    pastaDownload = sc.nextLine();
+                    break;
+                case "c":
+                    System.out.println("IP Coordenador: ");
+                    ipCoordenador = sc.nextLine();
+                    break;
+                default:
+                    break;
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+    }
+
+    private static void transmitir_arquivos(Scanner sc) {
+        System.out.println("Arquivo para enviar: ");
+        String localArquivo = sc.nextLine();
+
+        File arquivo = new File(localArquivo);
+        if (!arquivo.exists()) {
+            System.out.println("arquivo não encontrado.");
+            return;
+        }
+
+        try (Socket socket = new Socket("localhost", 10000);
+                DataInputStream in = new DataInputStream(socket.getInputStream());
+                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                FileInputStream fis = new FileInputStream(arquivo)) {
+                    out.writeUTF("TRANSMITINDO_ARQUIVOS");
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+    }
+
+    private static void listar_arquivos_usuario() {
+
+    }
 }
