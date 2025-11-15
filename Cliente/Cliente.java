@@ -12,8 +12,6 @@ public class Cliente {
     private static String pastaDownload;
     private static String ipCoordenador;
     private static int portaCoordenador = 10000;
-    
-
 
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
@@ -97,9 +95,27 @@ public class Cliente {
                 DataInputStream in = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                 FileInputStream fis = new FileInputStream(arquivo)) {
-                    out.writeUTF("TRANSMITINDO_ARQUIVOS");
+            out.writeUTF("TRANSMITINDO_ARQUIVOS");
+            out.writeUTF(apelido);
+            out.writeUTF(arquivo.getName());
+            out.writeLong(arquivo.length());
+
+            byte[] buffer = new byte[4096];
+            int bytesLidos;
+            while ((bytesLidos = fis.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesLidos);
+            }
+            out.flush();
+
+            String resposta = in.readUTF();
+            if (resposta.equals("TRANSMITIDO_OK")) {
+                int id = in.readInt();
+                System.out.println("Arquivo enviado com sucesso! ID: " + id);
+            } else {
+                System.out.println("Erro no envio do arquivo.");
+            }
         } catch (Exception e) {
-            // TODO: handle exception
+            e.printStackTrace();
         }
     }
 
