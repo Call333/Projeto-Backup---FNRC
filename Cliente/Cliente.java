@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -35,6 +36,7 @@ public class Cliente {
                         listar_arquivos_usuario(sc);
                         break;
                     case 3:
+                        baixar_arquivos(sc);
                         break;
                     case 4:
                         configuracoes(sc);
@@ -78,7 +80,7 @@ public class Cliente {
                     break;
             }
         } catch (Exception e) {
-            // TODO: handle exception
+            e.printStackTrace();
         }
     }
 
@@ -151,8 +153,41 @@ public class Cliente {
                 DataInputStream in = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());) {
             out.writeUTF("BAIXAR_ARQUIVOS");
+            out.writeInt(id);
+            out.flush();
+
+            String resposta = in.readUTF();
+            if(!resposta.equals("OK")) {
+                System.out.println("Arquivo encontrado");
+                return;
+            }
+
+            long tamanho = in.readLong();
+            File pasta = new File(pastaDownload);
+            if(!pasta.exists()) {
+                pasta.mkdirs();
+            }
+            File arquivo = new File(pasta, "arquivo_" + id); //Cria o "arquivo_id" para receber os dados no diretório de download.
+
+            try (FileOutputStream fos = new FileOutputStream(arquivo)) {
+                byte[] buffer = new byte[4096];
+                long recebido = 0;
+                while(recebido < tamanho) {
+                int lido = in.read(buffer);
+                    if(lido == -1){
+                        break;
+                    }
+                    fos.write(buffer, 0, lido);
+                    recebido += lido;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            
+            System.out.println("Download concluído: " + arquivo.getAbsolutePath());
+
         } catch (Exception e) {
-            // TODO: handle exception
+            e.printStackTrace();
         }
     }
 }
