@@ -114,10 +114,10 @@ public class ServidorDeArquivo {
             while ((lido = fis.read(buffer)) != -1) {
                 out.write(buffer, 0, lido);
             }
-            out.flush();
-            System.out.println("[Servidor]");
         } catch (Exception e) {
-            // TODO: handle exception
+            e.printStackTrace();
         }
+        out.flush();
+        System.out.println("[Servidor] Arquivo enviado: " + nome);
     }
 }
