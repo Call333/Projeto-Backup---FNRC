@@ -13,21 +13,21 @@ import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
-import java.util.concurrent.TransferQueue;
 
 public class ServidorDeArquivo {
     private static int porta_dados = 8000;
     private static int porta_controle = 999;
+    private static String ipCoordenador;
 
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        System.out.println("Endereço IP do Coordenador: ");
-        String ipCoordernador = sc.nextLine();
+        System.out.print("Endereço IP do Coordenador: ");
+        ipCoordenador = sc.nextLine();
 
-        // Registra o servidor de arquivos no Coordenador
-        try (Socket socket = new Socket(ipCoordernador, porta_controle);
+        // Envia solicitação de registro para o Coordenador
+        try (Socket socket = new Socket(ipCoordenador, porta_controle);
                 BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
-            out.write("TIPO=REGISTRAR_SERVIDOR_ARQUIVOS; PORTA=" + porta_controle);
+            out.write("CADASTRAR_SERVIDOR_DE_ARQUIVOS | " + porta_controle);
             out.flush();
 
         } catch (Exception e) {
