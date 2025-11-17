@@ -75,6 +75,10 @@ public class Cliente {
         apelido = sc.nextLine();
         System.out.print("\n(b) Configurar diretório de download: ");
         pastaDownload = sc.nextLine();
+        File pasta = new File("Cliente/", pastaDownload);
+            if (!pasta.exists()) {
+                pasta.mkdirs();
+        }
         System.out.print("\n(c) Configurar endereço IP do Coordenador: ");
         ipCoordenador = sc.nextLine();
     }
@@ -160,11 +164,7 @@ public class Cliente {
             }
 
             long tamanho = in.readLong();
-            File pasta = new File(pastaDownload);
-            if (!pasta.exists()) {
-                pasta.mkdirs();
-            }
-            File arquivo = new File(pasta, "arquivo_" + id); // Cria o "arquivo_id" para receber os dados no diretório de download.
+            File arquivo = new File(pastaDownload, "arquivo_" + id); // Cria o "arquivo_id" para receber os dados no diretório de download.
 
             try (FileOutputStream fos = new FileOutputStream(arquivo)) {
                 byte[] buffer = new byte[4096];
