@@ -1,10 +1,14 @@
 package Cliente;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -23,7 +27,8 @@ public class Cliente {
             System.out.println("2. Listar arquivos disponíveis por apelido");
             System.out.println("3. Baixar arquivos");
             System.out.println("4. Configurações");
-            System.out.println("5. Sair");
+            System.out.println("5. Exibir configuracoes");
+            System.out.println("6. Sair");
             int opcao = sc.nextInt();
             sc.nextLine();
 
@@ -42,6 +47,9 @@ public class Cliente {
                         configuracoes(sc);
                         break;
                     case 5:
+                        exibirConfiguracoes();
+                        break;
+                    case 6:
                         System.out.println("Saindo...");
                         break;
                     default:
@@ -55,36 +63,24 @@ public class Cliente {
 
     }
 
-    private static void configuracoes(Scanner sc) {
-        System.out.println("\nConfigurações:");
-        System.out.println("(a) Configurar apelido");
-        System.out.println("(b) Configurar diretório de download");
-        System.out.println("(c) Configurar endereço IP do Coordenador");
-        String opcao = sc.next();
-
-        try {
-            switch (opcao) {
-                case "a":
-                    System.out.println("Apelido: ");
-                    apelido = sc.next();
-                    break;
-                case "b":
-                    System.out.println("Diretório: ");
-                    pastaDownload = sc.nextLine();
-                    break;
-                case "c":
-                    System.out.println("IP Coordenador: ");
-                    ipCoordenador = sc.nextLine();
-                    break;
-                default:
-                    break;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    private static void exibirConfiguracoes() {
+        System.out.println(apelido);
+        System.out.println(pastaDownload);
+        System.out.println(ipCoordenador);
     }
 
-    private static void transmitir_arquivos(Scanner sc) {
+    private static void configuracoes(Scanner sc) {
+        System.out.println("\nConfigurações:");
+        System.out.print("\n(a) Configurar apelido: ");
+        apelido = sc.nextLine();
+        System.out.print("\n(b) Configurar diretório de download: ");
+        pastaDownload = sc.nextLine();
+        System.out.print("\n(c) Configurar endereço IP do Coordenador: ");
+        ipCoordenador = sc.nextLine();
+    }
+
+    private static void transmitir_arquivos(Scanner sc) throws IOException {
+
         System.out.println("Arquivo para enviar: ");
         String localArquivo = sc.nextLine();
 
@@ -95,13 +91,15 @@ public class Cliente {
         }
 
         try (Socket socket = new Socket(ipCoordenador, portaCoordenador);
-                DataInputStream in = new DataInputStream(socket.getInputStream());
-                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+                DataOutputStream out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
                 FileInputStream fis = new FileInputStream(arquivo)) {
+
             out.writeUTF("TRANSMITIR_ARQUIVOS");
             out.writeUTF(apelido);
             out.writeUTF(arquivo.getName());
             out.writeLong(arquivo.length());
+            out.flush();
 
             byte[] buffer = new byte[4096];
             int bytesLidos;
@@ -117,8 +115,6 @@ public class Cliente {
             } else {
                 System.out.println("Erro no envio do arquivo.");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -154,37 +150,37 @@ public class Cliente {
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());) {
             out.writeUTF("BAIXAR_ARQUIVOS");
             out.writeInt(id);
-            out.writeUTF(apelido);
+            // out.writeUTF(apelido);
             out.flush();
 
             String resposta = in.readUTF();
-            if(!resposta.equals("OK")) {
+            if (!resposta.equals("OK")) {
                 System.out.println("Arquivo encontrado");
                 return;
             }
 
             long tamanho = in.readLong();
             File pasta = new File(pastaDownload);
-            if(!pasta.exists()) {
+            if (!pasta.exists()) {
                 pasta.mkdirs();
             }
-            File arquivo = new File(pasta, "arquivo_" + id); //Cria o "arquivo_id" para receber os dados no diretório de download.
+            File arquivo = new File(pasta, "arquivo_" + id); // Cria o "arquivo_id" para receber os dados no diretório de download.
 
             try (FileOutputStream fos = new FileOutputStream(arquivo)) {
                 byte[] buffer = new byte[4096];
                 long recebido = 0;
-                while(recebido < tamanho) {
-                int lido = in.read(buffer);
-                    if(lido == -1){
-                        break;
+                while (recebido < tamanho) {
+                    int toRead = (int) Math.min(buffer.length, tamanho - recebido);
+                    int lido = in.read(buffer, 0 ,toRead);
+                    if (lido == -1) {
+                        throw new EOFException("EOF inesperado durante download");
                     }
                     fos.write(buffer, 0, lido);
                     recebido += lido;
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+                fos.flush();
             }
-            
+
             System.out.println("Download concluído: " + arquivo.getAbsolutePath());
 
         } catch (Exception e) {

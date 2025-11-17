@@ -1,8 +1,8 @@
 package Coordernador;
 
 public class ServidorInfo {
-    public String ipServidor;
-    public int porta;
+    private String ipServidor;
+private int porta;
 
     public ServidorInfo(String ipServidor, int porta) {
         this.ipServidor = ipServidor;

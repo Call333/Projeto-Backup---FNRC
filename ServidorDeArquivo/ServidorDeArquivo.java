@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -27,7 +28,7 @@ public class ServidorDeArquivo {
         // Envia solicitação de registro para o Coordenador
         try (Socket socket = new Socket(ipCoordenador, porta_controle);
                 BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
-            out.write("CADASTRAR_SERVIDOR_DE_ARQUIVOS | " + porta_controle);
+            out.write("CADASTRAR_SERVIDOR_DE_ARQUIVOS:" + porta_dados);
             out.flush();
 
         } catch (Exception e) {
@@ -50,7 +51,33 @@ public class ServidorDeArquivo {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
+    /* 
+    private static void cadastrarServidor() {
+        // Envia solicitação de registro para o Coordenador
+        try (Socket socket = new Socket(ipCoordenador, porta_controle);
+                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
+            out.write("CADASTRAR_SERVIDOR_DE_ARQUIVOS | " + porta_controle);
+            out.flush();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void descadastrarServidor() {
+        // Envia solicitação de registro para o Coordenador
+        try (Socket socket = new Socket(ipCoordenador, porta_controle);
+                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
+            out.write("DESCADASTRAR_SERVIDOR_DE_ARQUIVOS | " + porta_controle);
+            out.flush();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    */
 
     private static void tratarDados(Socket socket) {
         try (DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
@@ -77,30 +104,32 @@ public class ServidorDeArquivo {
     private static void salvarArquivos(DataInputStream in, DataOutputStream out) throws IOException {
         String nome = in.readUTF();
         long tamanho = in.readLong();
-        File arquivo = new File("repo/" + nome);
+        File arquivo = new File("repo/", nome);
+
         try (FileOutputStream fos = new FileOutputStream(arquivo)) {
             byte[] buffer = new byte[4096];
             long recebido = 0;
-            while(recebido < tamanho) {
-                int lido = in.read(buffer, 0, (int) Math.min(buffer.length, tamanho - recebido));
-                if(lido == -1) {
-                    break;
+            while (recebido < tamanho) {
+                int toRead = (int) Math.min(buffer.length, tamanho - recebido);
+                int lido = in.read(buffer, 0, toRead);
+                if (lido == -1) {
+                    throw new EOFException("EOF inesperado ao salvar arquivo");
                 }
-                fos.write(buffer, 0 ,lido);
+                fos.write(buffer, 0, lido);
                 recebido += lido;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            fos.flush();
         }
 
+        out.writeUTF("OK");
         out.flush();
         System.out.println("[Servidor] Arquivo recebido: " + nome);
     }
 
-    private static void recuperaArquivos(DataInputStream in, DataOutputStream out) throws IOException{
+    private static void recuperaArquivos(DataInputStream in, DataOutputStream out) throws IOException {
         String nome = in.readUTF();
         File arquivo = new File("repo/" + nome);
-        if(!arquivo.exists()) {
+        if (!arquivo.exists()) {
             out.writeUTF("ERRO: Arquivo não encontrado.");
             out.flush();
             return;
@@ -114,8 +143,6 @@ public class ServidorDeArquivo {
             while ((lido = fis.read(buffer)) != -1) {
                 out.write(buffer, 0, lido);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
         out.flush();
         System.out.println("[Servidor] Arquivo enviado: " + nome);
