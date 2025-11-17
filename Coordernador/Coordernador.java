@@ -214,6 +214,7 @@ public class Coordernador {
 
             long tamanho = servidorIn.readLong();
             clienteOut.writeUTF("OK");
+            clienteOut.writeUTF(registro.getNome()); // -> passa o nome do arquivo para o cliente
             clienteOut.writeLong(tamanho);
             clienteOut.flush();
 

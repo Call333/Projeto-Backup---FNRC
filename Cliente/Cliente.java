@@ -152,7 +152,7 @@ public class Cliente {
         int id = sc.nextInt();
 
         // Cria o "arquivo_id" para receber os dados no iretório de download.
-        File destino = new File(pastaDownload, "arquivo_" + id);
+        
 
         try (Socket socket = new Socket(ipCoordenador, portaCoordenador);
                 DataInputStream in = new DataInputStream(socket.getInputStream());
@@ -167,8 +167,10 @@ public class Cliente {
                 System.out.println("Arquivo não encontrado ou erro: " + resposta);
                 return;
             }
-
+            // Nome arquivo salvo no servidor.
+            String nomeOriginal = in.readUTF();
             long tamanho = in.readLong();
+            File destino = new File(pastaDownload, nomeOriginal);
 
             try (FileOutputStream fos = new FileOutputStream(destino)) {
                 byte[] buffer = new byte[4096];
