@@ -180,11 +180,10 @@ public class Coordernador {
     private void processarDownload(DataInputStream clienteIn, DataOutputStream clienteOut) throws IOException {
         int id = clienteIn.readInt();
         RegistroArquivo registro = null;
-        String[] servidor = null;
+        
         for (RegistroArquivo reg : registros) {
             if (id == reg.getId()) {
                 registro = reg;
-                servidor = registro.getServidor().split(":");
             }
         }
 
@@ -194,6 +193,7 @@ public class Coordernador {
             return;
         }
 
+        String[] servidor = registro.getServidor().split(":");
         ServidorInfo s = new ServidorInfo(servidor[0], Integer.parseInt(servidor[1]));
 
         try (Socket socket = new Socket(s.getIpServidor(), s.getPorta());

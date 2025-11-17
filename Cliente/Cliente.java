@@ -75,6 +75,14 @@ public class Cliente {
         apelido = sc.nextLine();
         System.out.print("\n(b) Configurar diretório de download: ");
         pastaDownload = sc.nextLine();
+        File pasta = new File(pastaDownload);
+        if (!pasta.exists()) {
+            boolean criada = pasta.mkdirs();
+            if (!criada) {
+                System.out.println("Erro: Não foi possível criar diretório " + pasta.getAbsolutePath());
+                return; // ← IMPORTANTE: evita quebrar o fluxo
+            }
+        }
         System.out.print("\n(c) Configurar endereço IP do Coordenador: ");
         ipCoordenador = sc.nextLine();
     }
@@ -143,12 +151,15 @@ public class Cliente {
         System.out.println("Identificador do arquivo: ");
         int id = sc.nextInt();
 
+        // Cria o "arquivo_id" para receber os dados no iretório de download.
+        File destino = new File(pastaDownload, "arquivo_" + id);
+
         try (Socket socket = new Socket(ipCoordenador, portaCoordenador);
                 DataInputStream in = new DataInputStream(socket.getInputStream());
-                DataOutputStream out = new DataOutputStream(socket.getOutputStream());) {
+                DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
+            
             out.writeUTF("BAIXAR_ARQUIVOS");
             out.writeInt(id);
-            // out.writeUTF(apelido);
             out.flush();
 
             String resposta = in.readUTF();
@@ -158,18 +169,8 @@ public class Cliente {
             }
 
             long tamanho = in.readLong();
-            File pasta = new File(pastaDownload);
-            if (!pasta.exists()) {
-                boolean criada = pasta.mkdirs();
-                if (!criada) {
-                    System.out.println("Erro: Não foi possível criar diretório " + pasta.getAbsolutePath());
-                    return; // ← IMPORTANTE: evita quebrar o fluxo
-                }
-            }
-            // Cria o "arquivo_id" para receber os dados no iretório de download.
-            File arquivo = new File(pastaDownload, "arquivo_" + id);
 
-            try (FileOutputStream fos = new FileOutputStream(arquivo)) {
+            try (FileOutputStream fos = new FileOutputStream(destino)) {
                 byte[] buffer = new byte[4096];
                 long recebido = 0;
                 while (recebido < tamanho) {
@@ -184,7 +185,7 @@ public class Cliente {
                 fos.flush();
             }
 
-            System.out.println("Download concluído: " + arquivo.getAbsolutePath());
+            System.out.println("Download concluído: " + destino.getAbsolutePath());
 
         } catch (Exception e) {
             e.printStackTrace();
