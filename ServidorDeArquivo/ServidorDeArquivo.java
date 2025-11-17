@@ -112,14 +112,24 @@ public class ServidorDeArquivo {
 
         out.writeUTF("OK");
         out.writeLong(arquivo.length());
+        out.flush();
+
         try (FileInputStream fis = new FileInputStream(arquivo)) {
             byte[] buffer = new byte[4096];
             int lido;
             while ((lido = fis.read(buffer)) != -1) {
                 out.write(buffer, 0, lido);
             }
+            out.flush();
         }
-        out.flush();
+        /* 
+        if(!arquivo.delete()) {
+            System.out.println("[Servidor] Aviso: não foi possível apagar arquivo local: " + arquivo.getAbsolutePath());
+        } else{
+            System.out.println("[Servidor] Arquivo enviado e apagado localmente: " + nome);
+        }
+            */
+        
         System.out.println("[Servidor] Arquivo enviado: " + nome);
     }
 }

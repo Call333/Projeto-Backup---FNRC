@@ -75,10 +75,6 @@ public class Cliente {
         apelido = sc.nextLine();
         System.out.print("\n(b) Configurar diretório de download: ");
         pastaDownload = sc.nextLine();
-        File pasta = new File("Cliente/", pastaDownload);
-        if (!pasta.exists()) {
-            pasta.mkdirs();
-        }
         System.out.print("\n(c) Configurar endereço IP do Coordenador: ");
         ipCoordenador = sc.nextLine();
     }
@@ -130,7 +126,7 @@ public class Cliente {
             out.writeUTF("LISTAR_ARQUIVOS");
             out.writeUTF(apelido);
             out.flush();
-            
+
             int total = in.readInt();
             System.out.println("-- Arquivos registrados --");
             for (int i = 0; i < total; i++) {
@@ -157,12 +153,21 @@ public class Cliente {
 
             String resposta = in.readUTF();
             if (!"OK".equals(resposta)) {
-                System.out.println("Arquivo não encontrado");
+                System.out.println("Arquivo não encontrado ou erro: " + resposta);
                 return;
             }
 
             long tamanho = in.readLong();
-            File arquivo = new File(pastaDownload, "arquivo_" + id); // Cria o "arquivo_id" para receber os dados no diretório de download.
+            File pasta = new File(pastaDownload);
+            if (!pasta.exists()) {
+                boolean criada = pasta.mkdirs();
+                if (!criada) {
+                    System.out.println("Erro: Não foi possível criar diretório " + pasta.getAbsolutePath());
+                    return; // ← IMPORTANTE: evita quebrar o fluxo
+                }
+            }
+            // Cria o "arquivo_id" para receber os dados no iretório de download.
+            File arquivo = new File(pastaDownload, "arquivo_" + id);
 
             try (FileOutputStream fos = new FileOutputStream(arquivo)) {
                 byte[] buffer = new byte[4096];

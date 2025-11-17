@@ -160,17 +160,10 @@ public class Coordernador {
 
     private void processarListagem(DataInputStream clienteIn, DataOutputStream clienteOut) throws IOException {
         String usuario = clienteIn.readUTF();
-        System.out.println(registros);
-        System.out.println(usuario);
         // contar somente registros do usuario
         List<RegistroArquivo> lista = new ArrayList<>();
         for (RegistroArquivo r : registros) {
-            System.out.println(r);
-            System.out.println(r.getApelido().contains(usuario));
-            System.out.println(r.getApelido().equals(usuario));
-            System.out.println("Apelido salvo nos registros: "+ r.getApelido());
-            System.out.println("Apelido vindo do cliente" + usuario);
-            if(r.getApelido().contains(usuario)) {
+            if (r.getApelido().contains(usuario)) {
                 lista.add(r);
             }
         }
@@ -194,6 +187,13 @@ public class Coordernador {
                 servidor = registro.getServidor().split(":");
             }
         }
+
+        if (registro == null) {
+            clienteOut.writeUTF("ERRO: Arquivo não encontrado");
+            clienteOut.flush();
+            return;
+        }
+
         ServidorInfo s = new ServidorInfo(servidor[0], Integer.parseInt(servidor[1]));
 
         try (Socket socket = new Socket(s.getIpServidor(), s.getPorta());
@@ -229,7 +229,8 @@ public class Coordernador {
                 recebido += lido;
             }
             clienteOut.flush();
-            registros.remove(id);
+
+            // registros.remove(id);
             System.out.println("[Coordenador] DOWNLOAD repassado com sucesso e registro removido: ID= " + id);
 
         } catch (IOException e) {
