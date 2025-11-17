@@ -76,8 +76,8 @@ public class Cliente {
         System.out.print("\n(b) Configurar diretório de download: ");
         pastaDownload = sc.nextLine();
         File pasta = new File("Cliente/", pastaDownload);
-            if (!pasta.exists()) {
-                pasta.mkdirs();
+        if (!pasta.exists()) {
+            pasta.mkdirs();
         }
         System.out.print("\n(c) Configurar endereço IP do Coordenador: ");
         ipCoordenador = sc.nextLine();
@@ -122,25 +122,23 @@ public class Cliente {
         }
     }
 
-    private static void listar_arquivos_usuario(Scanner sc) {
-        System.out.println("\n --- arquivos ---");
-
+    private static void listar_arquivos_usuario(Scanner sc) throws IOException {
         try (Socket socket = new Socket(ipCoordenador, portaCoordenador);
-                DataInputStream in = new DataInputStream(socket.getInputStream());
-                DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
+                DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+                DataOutputStream out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()))) {
+
             out.writeUTF("LISTAR_ARQUIVOS");
             out.writeUTF(apelido);
             out.flush();
-
+            
             int total = in.readInt();
             System.out.println("-- Arquivos registrados --");
             for (int i = 0; i < total; i++) {
                 int id = in.readInt();
                 String nome = in.readUTF();
-                System.out.printf("ID: %d | %s%n", id, nome);
+                String servidor = in.readUTF();
+                System.out.printf("ID: %d | %s%n", id, nome, servidor);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
     }
@@ -158,8 +156,8 @@ public class Cliente {
             out.flush();
 
             String resposta = in.readUTF();
-            if (!resposta.equals("OK")) {
-                System.out.println("Arquivo encontrado");
+            if (!"OK".equals(resposta)) {
+                System.out.println("Arquivo não encontrado");
                 return;
             }
 
@@ -171,7 +169,7 @@ public class Cliente {
                 long recebido = 0;
                 while (recebido < tamanho) {
                     int toRead = (int) Math.min(buffer.length, tamanho - recebido);
-                    int lido = in.read(buffer, 0 ,toRead);
+                    int lido = in.read(buffer, 0, toRead);
                     if (lido == -1) {
                         throw new EOFException("EOF inesperado durante download");
                     }

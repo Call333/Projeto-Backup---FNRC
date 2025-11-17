@@ -53,31 +53,6 @@ public class ServidorDeArquivo {
         }
 
     }
-    /* 
-    private static void cadastrarServidor() {
-        // Envia solicitação de registro para o Coordenador
-        try (Socket socket = new Socket(ipCoordenador, porta_controle);
-                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
-            out.write("CADASTRAR_SERVIDOR_DE_ARQUIVOS | " + porta_controle);
-            out.flush();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void descadastrarServidor() {
-        // Envia solicitação de registro para o Coordenador
-        try (Socket socket = new Socket(ipCoordenador, porta_controle);
-                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
-            out.write("DESCADASTRAR_SERVIDOR_DE_ARQUIVOS | " + porta_controle);
-            out.flush();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    */
 
     private static void tratarDados(Socket socket) {
         try (DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
@@ -128,7 +103,7 @@ public class ServidorDeArquivo {
 
     private static void recuperaArquivos(DataInputStream in, DataOutputStream out) throws IOException {
         String nome = in.readUTF();
-        File arquivo = new File("repo/" + nome);
+        File arquivo = new File("repo/", nome);
         if (!arquivo.exists()) {
             out.writeUTF("ERRO: Arquivo não encontrado.");
             out.flush();

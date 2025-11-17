@@ -88,8 +88,10 @@ public class Coordernador {
                     processarUpload(in, out);
                     break;
                 case "LISTAR_ARQUIVOS":
+                    processarListagem(in, out);
                     break;
                 case "BAIXAR_ARQUIVOS":
+                    processarDownload(in, out);
                     break;
                 default:
                     out.writeUTF("ERRO: Comando inválido");
@@ -142,7 +144,7 @@ public class Coordernador {
             String respostaServidor = servidorIn.readUTF();
             if ("OK".equals(respostaServidor)) {
                 int id = new Random().nextInt(10000);
-                registros.add(new RegistroArquivo(id, usuario, nomeArquivo, destino.toString()));
+                registros.add(new RegistroArquivo(id, nomeArquivo, usuario, destino.toString()));
                 clienteOut.writeUTF("TRANSMITIDO_OK");
                 clienteOut.writeInt(id);
             } else {
@@ -150,9 +152,89 @@ public class Coordernador {
             }
             clienteOut.flush();
         } catch (IOException e) {
-            System.err.println("[Coordenador] Erro ao encaminhar upload: " +
-                    e.getMessage());
+            System.err.println("[Coordenador] Erro ao encaminhar upload: " + e.getMessage());
             clienteOut.writeUTF("ERRO: Falha ao encaminhar para servidor");
+            clienteOut.flush();
+        }
+    }
+
+    private void processarListagem(DataInputStream clienteIn, DataOutputStream clienteOut) throws IOException {
+        String usuario = clienteIn.readUTF();
+        System.out.println(registros);
+        System.out.println(usuario);
+        // contar somente registros do usuario
+        List<RegistroArquivo> lista = new ArrayList<>();
+        for (RegistroArquivo r : registros) {
+            System.out.println(r);
+            System.out.println(r.getApelido().contains(usuario));
+            System.out.println(r.getApelido().equals(usuario));
+            System.out.println("Apelido salvo nos registros: "+ r.getApelido());
+            System.out.println("Apelido vindo do cliente" + usuario);
+            if(r.getApelido().contains(usuario)) {
+                lista.add(r);
+            }
+        }
+        System.out.println(lista.toString());
+        clienteOut.writeInt(lista.size());
+        for (RegistroArquivo r : lista) {
+            clienteOut.writeInt(r.getId());
+            clienteOut.writeUTF(r.getNome());
+            clienteOut.writeUTF(r.getServidor());
+        }
+        clienteOut.flush();
+    }
+
+    private void processarDownload(DataInputStream clienteIn, DataOutputStream clienteOut) throws IOException {
+        int id = clienteIn.readInt();
+        RegistroArquivo registro = null;
+        String[] servidor = null;
+        for (RegistroArquivo reg : registros) {
+            if (id == reg.getId()) {
+                registro = reg;
+                servidor = registro.getServidor().split(":");
+            }
+        }
+        ServidorInfo s = new ServidorInfo(servidor[0], Integer.parseInt(servidor[1]));
+
+        try (Socket socket = new Socket(s.getIpServidor(), s.getPorta());
+                DataInputStream servidorIn = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+                DataOutputStream servidorOut = new DataOutputStream(
+                        new BufferedOutputStream(socket.getOutputStream()))) {
+
+            servidorOut.writeUTF("RECUPERAR_ARQUIVOS");
+            servidorOut.writeUTF(registro.getNome());
+            servidorOut.flush();
+
+            String respostaServidor = servidorIn.readUTF();
+            if (!"OK".equals(respostaServidor)) {
+                clienteOut.writeUTF("ERRO: Arquivo indisponível");
+                clienteOut.flush();
+                return;
+            }
+
+            long tamanho = servidorIn.readLong();
+            clienteOut.writeUTF("OK");
+            clienteOut.writeLong(tamanho);
+            clienteOut.flush();
+
+            byte[] buffer = new byte[4096];
+            long recebido = 0;
+            while (recebido < tamanho) {
+                int toRead = (int) Math.min(buffer.length, tamanho - recebido);
+                int lido = servidorIn.read(buffer, 0, toRead);
+                if (lido == -1) {
+                    throw new EOFException("EOF inesperado do servidor durante download");
+                }
+                clienteOut.write(buffer, 0, lido);
+                recebido += lido;
+            }
+            clienteOut.flush();
+            registros.remove(id);
+            System.out.println("[Coordenador] DOWNLOAD repassado com sucesso e registro removido: ID= " + id);
+
+        } catch (IOException e) {
+            System.err.println("[Coordenador] Erro ao recuperar arquivo do servidor: " + e.getMessage());
+            clienteOut.writeUTF("ERRO: falha ao recuperar");
             clienteOut.flush();
         }
     }

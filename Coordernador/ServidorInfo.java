@@ -2,7 +2,7 @@ package Coordernador;
 
 public class ServidorInfo {
     private String ipServidor;
-private int porta;
+    private int porta;
 
     public ServidorInfo(String ipServidor, int porta) {
         this.ipServidor = ipServidor;
@@ -19,6 +19,6 @@ private int porta;
 
     @Override
     public String toString() {
-        return ipServidor + " | " + porta;
+        return ipServidor + ":" + porta;
     }
 }
