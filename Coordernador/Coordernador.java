@@ -143,7 +143,7 @@ public class Coordernador {
 
             String respostaServidor = servidorIn.readUTF();
             if ("OK".equals(respostaServidor)) {
-                int id = new Random().nextInt(10000);
+                int id = gerarIdUnico();
                 registros.add(new RegistroArquivo(id, nomeArquivo, usuario, destino.toString()));
                 clienteOut.writeUTF("TRANSMITIDO_OK");
                 clienteOut.writeInt(id);
@@ -180,7 +180,7 @@ public class Coordernador {
     private void processarDownload(DataInputStream clienteIn, DataOutputStream clienteOut) throws IOException {
         int id = clienteIn.readInt();
         RegistroArquivo registro = null;
-        
+
         for (RegistroArquivo reg : registros) {
             if (id == reg.getId()) {
                 registro = reg;
@@ -239,5 +239,25 @@ public class Coordernador {
             clienteOut.writeUTF("ERRO: falha ao recuperar");
             clienteOut.flush();
         }
+    }
+
+    private int gerarIdUnico() {
+        Integer id;
+        while(true) {
+            id = new Random().nextInt(1, 10000);
+            boolean existe = false;
+
+            for (RegistroArquivo r : registros) {
+                if(r.getId() == id){
+                    existe = true;
+                    break;
+                }
+            }
+
+            if(!existe) {
+                break;
+            }
+        }
+        return id;
     }
 }

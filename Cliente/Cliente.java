@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class Cliente {
@@ -56,17 +57,23 @@ public class Cliente {
                         System.out.println("Opção invalida!");
                         break;
                 }
+            } catch (InputMismatchException e) {
+                System.out.println("Use apenas números inteiros.");
+                System.out.println(e.getLocalizedMessage());
             } catch (Exception e) {
-                e.printStackTrace();
+                System.out.println(e.getMessage());
             }
+
         }
 
     }
 
     private static void exibirConfiguracoes() {
-        System.out.println(apelido);
-        System.out.println(pastaDownload);
-        System.out.println(ipCoordenador);
+        System.out.println("\n---- Configurações ----");
+        System.out.println("Apelido: " + apelido);
+        System.out.println("Pasta de download: " + pastaDownload);
+        System.out.println("IP do Coordenador: " + ipCoordenador);
+        
     }
 
     private static void configuracoes(Scanner sc) {
@@ -123,10 +130,12 @@ public class Cliente {
             } else {
                 System.out.println("Erro no envio do arquivo.");
             }
+        } catch (NullPointerException e) {
+            System.out.println("Você não definiu um apelido em Configuracoes no menu principal.");
         }
     }
 
-    private static void listar_arquivos_usuario(Scanner sc) throws IOException {
+    private static void listar_arquivos_usuario(Scanner sc) throws IOException, EOFException {
         try (Socket socket = new Socket(ipCoordenador, portaCoordenador);
                 DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
                 DataOutputStream out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()))) {
@@ -141,23 +150,23 @@ public class Cliente {
                 int id = in.readInt();
                 String nome = in.readUTF();
                 String servidor = in.readUTF();
-                System.out.printf("ID: %d | %s%n", id, nome, servidor);
+                System.out.printf("ID: %d | NOME: %s | SERVIDOR: %s%n", id, nome, servidor);
             }
+        } catch (NullPointerException e) {
+            System.out.println("Você não definiu um apelido em Configuracoes no menu principal.");
         }
-
     }
 
-    private static void baixar_arquivos(Scanner sc) {
+    private static void baixar_arquivos(Scanner sc) throws IOException {
         System.out.println("Identificador do arquivo: ");
         int id = sc.nextInt();
 
         // Cria o "arquivo_id" para receber os dados no iretório de download.
-        
 
         try (Socket socket = new Socket(ipCoordenador, portaCoordenador);
                 DataInputStream in = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
-            
+
             out.writeUTF("BAIXAR_ARQUIVOS");
             out.writeInt(id);
             out.flush();
@@ -189,8 +198,6 @@ public class Cliente {
 
             System.out.println("Download concluído: " + destino.getAbsolutePath());
 
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 }

@@ -51,7 +51,7 @@ public class ServidorDeArquivo {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+        sc.close();
     }
 
     private static void tratarDados(Socket socket) {
