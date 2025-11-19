@@ -27,12 +27,12 @@ public class Coordernador {
     public static void main(String[] args) throws IOException {
         Coordernador coord = new Coordernador();
         new Thread(coord::escutarControle).start();
-        coord.escutarDados();
+        coord.escutarCliente();
     }
 
     private void escutarControle() {
         try (ServerSocket serverSocket = new ServerSocket(PORTA_CONTROLE)) {
-            System.out.println("[Coordenador] Aguardando conexões de Servidores na porta " + PORTA_CONTROLE);
+            System.out.println("[Coordenador] Aguardando conexões de CADASTRO/DESCADASTRO de Servidores na porta " + PORTA_CONTROLE);
             while (true) {
                 Socket socket = serverSocket.accept();
                 pool.execute(() -> tratarControle(socket));
@@ -66,7 +66,7 @@ public class Coordernador {
         }
     }
 
-    private void escutarDados() {
+    private void escutarCliente() {
         try (ServerSocket serverSocket = new ServerSocket(PORTA_DADOS)) {
             System.out.println("[Coordenador] Aguardando conexões de Clientes na porta " + PORTA_DADOS);
             while (true) {
@@ -98,7 +98,7 @@ public class Coordernador {
                     out.flush();
                     break;
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -159,22 +159,27 @@ public class Coordernador {
     }
 
     private void processarListagem(DataInputStream clienteIn, DataOutputStream clienteOut) throws IOException {
-        String usuario = clienteIn.readUTF();
-        // contar somente registros do usuario
-        List<RegistroArquivo> lista = new ArrayList<>();
-        for (RegistroArquivo r : registros) {
-            if (r.getApelido().contains(usuario)) {
-                lista.add(r);
+        try {
+            String usuario = clienteIn.readUTF();
+            // contar somente registros do usuario
+            List<RegistroArquivo> lista = new ArrayList<>();
+            for (RegistroArquivo r : registros) {
+                if (r.getApelido().contains(usuario)) {
+                    lista.add(r);
+                }
             }
-        }
-        System.out.println(lista.toString());
-        clienteOut.writeInt(lista.size());
-        for (RegistroArquivo r : lista) {
-            clienteOut.writeInt(r.getId());
-            clienteOut.writeUTF(r.getNome());
-            clienteOut.writeUTF(r.getServidor());
-        }
-        clienteOut.flush();
+            System.out.println(lista.toString());
+            clienteOut.writeInt(lista.size());
+            for (RegistroArquivo r : lista) {
+                clienteOut.writeInt(r.getId());
+                clienteOut.writeUTF(r.getNome());
+                clienteOut.writeUTF(r.getServidor());
+            }
+            clienteOut.flush();
+        } catch (EOFException e) {
+            System.out.println("[Coordenador] O Cliente não enviou o apelido: " + e.getMessage());
+        } 
+
     }
 
     private void processarDownload(DataInputStream clienteIn, DataOutputStream clienteOut) throws IOException {
@@ -243,18 +248,18 @@ public class Coordernador {
 
     private int gerarIdUnico() {
         Integer id;
-        while(true) {
+        while (true) {
             id = new Random().nextInt(1, 10000);
             boolean existe = false;
 
             for (RegistroArquivo r : registros) {
-                if(r.getId() == id){
+                if (r.getId() == id) {
                     existe = true;
                     break;
                 }
             }
 
-            if(!existe) {
+            if (!existe) {
                 break;
             }
         }

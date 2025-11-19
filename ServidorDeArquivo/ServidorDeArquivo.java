@@ -43,7 +43,7 @@ public class ServidorDeArquivo {
 
         // Servidor principal
         try (ServerSocket serverSocket = new ServerSocket(porta_dados)) {
-            System.out.println("[Servidor] Aguardando conexões na porta " + porta_dados);
+            System.out.println("[Servidor] Aguardando dados de um Coordenador na porta " + porta_dados);
             while (true) {
                 Socket socket = serverSocket.accept();
                 tratarDados(socket);
