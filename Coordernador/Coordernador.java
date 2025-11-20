@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -32,7 +33,8 @@ public class Coordernador {
 
     private void escutarControle() {
         try (ServerSocket serverSocket = new ServerSocket(PORTA_CONTROLE)) {
-            System.out.println("[Coordenador] Aguardando conexões de CADASTRO/DESCADASTRO de Servidores na porta " + PORTA_CONTROLE);
+            System.out.println("[Coordenador] Aguardando conexões de CADASTRO/DESCADASTRO de Servidores na porta "
+                    + PORTA_CONTROLE);
             while (true) {
                 Socket socket = serverSocket.accept();
                 pool.execute(() -> tratarControle(socket));
@@ -45,18 +47,19 @@ public class Coordernador {
     private void tratarControle(Socket socket) {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
             String linha = in.readLine();
-
+            
             // Seperando a msg do serv de arquivos em "Comando" e "Porta".
             String[] msg = linha.split(":");
             String comando = msg[0];
             int porta = Integer.parseInt(msg[1]);
             String host = socket.getInetAddress().getHostAddress();
+            ServidorInfo sInfo = new ServidorInfo(host, porta);
 
             if (comando.equals("CADASTRAR_SERVIDOR_DE_ARQUIVOS")) {
-                servidores.add(new ServidorInfo(host, porta));
+                servidores.add(sInfo);
                 System.out.println("[Coordenador] Servidor de Arquivos registrado: " + host + " | " + porta);
             } else if (comando.equals("DESCADASTRAR_SERVIDOR_DE_ARQUIVOS")) {
-                servidores.remove(new ServidorInfo(host, porta));
+                servidores.remove(sInfo);
                 System.out.println("[Coordenador] Servidor de Arquivos removido: " + host + " | " + porta);
             } else {
                 System.out.println("[Coordenador] Comando desconhecido");
@@ -109,50 +112,51 @@ public class Coordernador {
             clienteOut.flush();
             return;
         }
-
+        
         ServidorInfo destino = servidores.stream().findAny().get();
         System.out.println("[Coordenador] Encamilhando UPLOAD para " + destino);
+        try {
+            String usuario = clienteIn.readUTF();
+            String nomeArquivo = clienteIn.readUTF();
+            long tamanhoArquivo = clienteIn.readLong();
 
-        String usuario = clienteIn.readUTF();
-        String nomeArquivo = clienteIn.readUTF();
-        long tamanhoArquivo = clienteIn.readLong();
+            try (Socket socket = new Socket(destino.getIpServidor(), destino.getPorta());
+                    DataInputStream servidorIn = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+                    DataOutputStream servidorOut = new DataOutputStream(
+                            new BufferedOutputStream(socket.getOutputStream()))) {
 
-        try (Socket socket = new Socket(destino.getIpServidor(), destino.getPorta());
-                DataInputStream servidorIn = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-                DataOutputStream servidorOut = new DataOutputStream(
-                        new BufferedOutputStream(socket.getOutputStream()))) {
+                servidorOut.writeUTF("SALVAR_ARQUIVOS");
+                servidorOut.writeUTF(nomeArquivo);
+                servidorOut.writeLong(tamanhoArquivo);
+                servidorOut.flush();
 
-            servidorOut.writeUTF("SALVAR_ARQUIVOS");
-            servidorOut.writeUTF(nomeArquivo);
-            servidorOut.writeLong(tamanhoArquivo);
-            servidorOut.flush();
+                byte[] buffer = new byte[4096];
+                long enviado = 0;
+                while (enviado < tamanhoArquivo) {
+                    int toRead = (int) Math.min(buffer.length, tamanhoArquivo - enviado);
 
-            byte[] buffer = new byte[4096];
-            long enviado = 0;
-            while (enviado < tamanhoArquivo) {
-                int toRead = (int) Math.min(buffer.length, tamanhoArquivo - enviado);
-
-                int lido = clienteIn.read(buffer, 0, toRead);
-                if (lido == -1) {
-                    throw new EOFException("EOF inesperado do cliente durante upload");
+                    int lido = clienteIn.read(buffer, 0, toRead);
+                    if (lido == -1) {
+                        throw new EOFException("EOF inesperado do cliente durante upload");
+                    }
+                    servidorOut.write(buffer, 0, lido);
+                    enviado += lido;
                 }
-                servidorOut.write(buffer, 0, lido);
-                enviado += lido;
-            }
-            servidorOut.flush();
+                servidorOut.flush();
 
-            String respostaServidor = servidorIn.readUTF();
-            if ("OK".equals(respostaServidor)) {
-                int id = gerarIdUnico();
-                registros.add(new RegistroArquivo(id, nomeArquivo, usuario, destino.toString()));
-                clienteOut.writeUTF("TRANSMITIDO_OK");
-                clienteOut.writeInt(id);
-            } else {
-                clienteOut.writeUTF("ERRO");
-            }
+                String respostaServidor = servidorIn.readUTF();
+                if ("OK".equals(respostaServidor)) {
+                    int id = gerarIdUnico();
+                    registros.add(new RegistroArquivo(id, nomeArquivo, usuario, destino.toString()));
+                    clienteOut.writeUTF("TRANSMITIDO_OK");
+                    clienteOut.writeInt(id);
+                } else {
+                    clienteOut.writeUTF("ERRO");
+                }
             clienteOut.flush();
+            }
         } catch (IOException e) {
-            System.err.println("[Coordenador] Erro ao encaminhar upload: " + e.getMessage());
+            System.err.println("[Coordenador] Erro ao encaminhar upload: Usuario não digitou o apelido");
             clienteOut.writeUTF("ERRO: Falha ao encaminhar para servidor");
             clienteOut.flush();
         }
@@ -178,11 +182,17 @@ public class Coordernador {
             clienteOut.flush();
         } catch (EOFException e) {
             System.out.println("[Coordenador] O Cliente não enviou o apelido: " + e.getMessage());
-        } 
+        }
 
     }
 
     private void processarDownload(DataInputStream clienteIn, DataOutputStream clienteOut) throws IOException {
+        if (servidores.isEmpty()) {
+            clienteOut.writeUTF("ERRO: Nenhum servidor disponível.");
+            clienteOut.flush();
+            return;
+        }
+
         int id = clienteIn.readInt();
         RegistroArquivo registro = null;
 
@@ -244,7 +254,7 @@ public class Coordernador {
             clienteOut.writeUTF("ERRO: falha ao recuperar");
             clienteOut.flush();
         }
-    }
+      }
 
     private int gerarIdUnico() {
         Integer id;

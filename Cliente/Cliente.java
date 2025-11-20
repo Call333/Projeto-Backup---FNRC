@@ -130,7 +130,9 @@ public class Cliente {
             }
         } catch (NullPointerException e) {
             System.out.println("Você não definiu um apelido em Configuracoes no menu principal.");
-        } 
+        } catch (SocketException e) {
+            System.out.println("Nenhum servidor disponível");
+        }
     }
 
     private static void listar_arquivos_usuario(Scanner sc) throws IOException {
@@ -195,11 +197,11 @@ public class Cliente {
                 }
                 System.out.println("Download concluído: " + destino.getAbsolutePath());
 
-            } catch (SocketException e) {
-                System.out.println("Conexão recusada: O coordenador está off-line.");
             }
         } catch (InputMismatchException e) {
             System.out.println("Você digitou caractere inválido no campo ID.");
+        }  catch (SocketException e) {
+            System.out.println("Conexão recusada: O coordenador está off-line.");
         }
 
     }
