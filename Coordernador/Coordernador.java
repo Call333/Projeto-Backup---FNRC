@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -54,7 +53,7 @@ public class Coordernador {
             int porta = Integer.parseInt(msg[1]);
             String host = socket.getInetAddress().getHostAddress();
             ServidorInfo sInfo = new ServidorInfo(host, porta);
-
+            
             if (comando.equals("CADASTRAR_SERVIDOR_DE_ARQUIVOS")) {
                 servidores.add(sInfo);
                 System.out.println("[Coordenador] Servidor de Arquivos registrado: " + host + " | " + porta);
@@ -65,7 +64,7 @@ public class Coordernador {
                 System.out.println("[Coordenador] Comando desconhecido");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Erro inesperado...");
         }
     }
 
@@ -112,8 +111,8 @@ public class Coordernador {
             clienteOut.flush();
             return;
         }
-        
-        ServidorInfo destino = servidores.stream().findAny().get();
+
+        ServidorInfo destino = servidorDestino(servidores);
         System.out.println("[Coordenador] Encamilhando UPLOAD para " + destino);
         try {
             String usuario = clienteIn.readUTF();
@@ -163,6 +162,7 @@ public class Coordernador {
     }
 
     private void processarListagem(DataInputStream clienteIn, DataOutputStream clienteOut) throws IOException {
+        System.out.println(servidores);
         try {
             String usuario = clienteIn.readUTF();
             // contar somente registros do usuario
@@ -192,7 +192,7 @@ public class Coordernador {
             clienteOut.flush();
             return;
         }
-
+        
         int id = clienteIn.readInt();
         String usuario = clienteIn.readUTF();
         RegistroArquivo registro = null;
@@ -256,6 +256,22 @@ public class Coordernador {
             clienteOut.flush();
         }
       }
+    
+    private ServidorInfo servidorDestino(List<ServidorInfo> servidores){
+        ServidorInfo acessoMenosRecente = servidores.get(0);
+
+        if(servidores.isEmpty()) {
+            return null;
+        }
+
+        for (ServidorInfo servidor : servidores) { 
+            if(servidor.getUltimoAcesso().isBefore(acessoMenosRecente.getUltimoAcesso())) {
+                acessoMenosRecente = servidor;
+            }
+        }
+        acessoMenosRecente.atualizarAcesso();
+        return acessoMenosRecente;
+    }
 
     private int gerarIdUnico() {
         Integer id;
