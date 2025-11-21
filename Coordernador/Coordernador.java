@@ -194,10 +194,11 @@ public class Coordernador {
         }
 
         int id = clienteIn.readInt();
+        String usuario = clienteIn.readUTF();
         RegistroArquivo registro = null;
 
         for (RegistroArquivo reg : registros) {
-            if (id == reg.getId()) {
+            if (id == reg.getId() && usuario.equals(reg.getApelido())) {
                 registro = reg;
             }
         }

@@ -169,6 +169,7 @@ public class Cliente {
 
                 out.writeUTF("BAIXAR_ARQUIVOS");
                 out.writeInt(id);
+                out.writeUTF(apelido);
                 out.flush();
 
                 String resposta = in.readUTF();
