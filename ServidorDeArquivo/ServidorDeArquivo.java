@@ -13,21 +13,27 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class ServidorDeArquivo {
-    private static int porta_dados = 8000;
+    private static int porta_dados;
     private static int porta_controle = 999;
     private static String ipCoordenador;
     private static boolean estaAtivo = true;
     private static boolean cadastrado = false;
 
     public static void main(String[] args) {
-        
         Scanner sc = new Scanner(System.in);
-        System.out.print("Endereço IP do Coordenador: ");
-        ipCoordenador = sc.nextLine();
-
+        try {
+            System.out.print("Endereço IP do Coordenador: ");
+            ipCoordenador = sc.nextLine();
+            System.out.print("Porta que o servidor irá funcionar(ex.: 8000): ");
+            porta_dados = sc.nextInt();
+        } catch (InputMismatchException e) {
+            System.out.println("apenas números inteiros para a porta.");
+        }
+        
         cadastrarNoCoordenador(ipCoordenador);
 
         new Thread(() -> escutarConsole(ipCoordenador)).start();
@@ -45,22 +51,27 @@ public class ServidorDeArquivo {
                 Socket coordenador = serverSocket.accept();
                 tratarDados(coordenador);
             }
-            
+
             System.out.println("[Servidor] Encerrando servidor de dados.");
         } catch (Exception e) {
             e.printStackTrace();
         }
         sc.close();
-    }  
+    }
 
     private static void cadastrarNoCoordenador(String ipCoordenador) {
         // Envia solicitação de cadastro para o Coordenador
+        if(porta_dados == 0) {
+            System.out.println("O servidor não pode funcionar na porta 0.");
+            estaAtivo = false;
+            return;
+        }
         try (Socket socket = new Socket(ipCoordenador, porta_controle);
                 BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
-            
+
             out.write("CADASTRAR_SERVIDOR_DE_ARQUIVOS:" + porta_dados);
             out.flush();
-            
+
             cadastrado = true;
             System.out.println("[Servidor] Cadastro no Coordenador.");
 
@@ -70,14 +81,14 @@ public class ServidorDeArquivo {
     }
 
     private static void descadastrarNoCoordenador(String ipCoordenador) {
-        if(!cadastrado) {
+        if (!cadastrado) {
             System.out.println("O Servidor já está cadastrado.");
             return;
         }
         // Envia solicitação de descadastro para o Coordenador
         try (Socket socket = new Socket(ipCoordenador, porta_controle);
                 BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
-            
+
             out.write("DESCADASTRAR_SERVIDOR_DE_ARQUIVOS:" + porta_dados);
             out.flush();
 
@@ -89,26 +100,26 @@ public class ServidorDeArquivo {
         }
     }
 
-    private static void escutarConsole(String ipCoordenador){
+    private static void escutarConsole(String ipCoordenador) {
         Scanner sc = new Scanner(System.in);
 
-        while(true) {
-
+        while (true) {
+            
             String cmd = sc.nextLine().trim().toLowerCase();
 
-            if(cmd.equals("sair")  || cmd.equals("desconectar")) {
+            if (cmd.equals("sair") || cmd.equals("desconectar")) {
                 System.out.println("[Servidor] Solicitando DESCONEXÃO.");
                 descadastrarNoCoordenador(ipCoordenador);
                 continue;
             }
 
-            if(cmd.equals("conectar")) {
+            if (cmd.equals("conectar")) {
                 System.out.println("[Servidor] Solicitando CONEXÃO.");
                 cadastrarNoCoordenador(ipCoordenador);
                 continue;
             }
 
-            if(cmd.equals("shutdown")) {
+            if (cmd.equals("shutdown")) {
                 descadastrarNoCoordenador(cmd);
                 estaAtivo = false;
                 break;

@@ -101,7 +101,7 @@ public class Coordernador {
                     break;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("ERRO:" + e.getMessage());
         }
     }
 
@@ -208,11 +208,22 @@ public class Coordernador {
             clienteOut.flush();
             return;
         }
+        //Verifica se o servidor onde o arquivo está salvo ainda está cadastrado.
+        String[] dados = registro.getServidor().split(":");
+        ServidorInfo servidor = null;
+        for (ServidorInfo s : servidores) {
+            if(s.getIpServidor().equals(dados[0]) && s.getPorta() == Integer.parseInt(dados[1])) {
+                servidor = new ServidorInfo(dados[0], Integer.parseInt(dados[1]));
+            }
+        }
 
-        String[] servidor = registro.getServidor().split(":");
-        ServidorInfo s = new ServidorInfo(servidor[0], Integer.parseInt(servidor[1]));
+        if(servidor == null) {
+            clienteOut.writeUTF("ERRO: Servidor indisponível.");
+            clienteOut.flush();
+            return;
+        }
 
-        try (Socket socket = new Socket(s.getIpServidor(), s.getPorta());
+        try (Socket socket = new Socket(servidor.getIpServidor(), servidor.getPorta());
                 DataInputStream servidorIn = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
                 DataOutputStream servidorOut = new DataOutputStream(
                         new BufferedOutputStream(socket.getOutputStream()))) {

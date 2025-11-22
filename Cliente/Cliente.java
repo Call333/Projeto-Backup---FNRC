@@ -61,7 +61,7 @@ public class Cliente {
             } catch (InputMismatchException e) {
                 System.out.println("Use apenas números inteiros.");
             } catch (Exception e) {
-                System.out.println(e.getMessage());
+                System.out.println("Servidor indisponível");
             }
         }
 
