@@ -198,16 +198,15 @@ public class ServidorDeArquivo {
             }
             out.flush();
         }
-        /*
-         * if(!arquivo.delete()) {
-         * System.out.
-         * println("[Servidor] Aviso: não foi possível apagar arquivo local: " +
-         * arquivo.getAbsolutePath());
-         * } else{
-         * System.out.println("[Servidor] Arquivo enviado e apagado localmente: " +
-         * nome);
-         * }
-         */
+        
+        if(!arquivo.delete()) {
+        System.out.println("[Servidor] Aviso: não foi possível apagar arquivo local: " +
+        arquivo.getAbsolutePath());
+        } else{
+        System.out.println("[Servidor] Arquivo enviado e apagado localmente: " +
+        nome);
+        }
+        
 
         System.out.println("[Servidor] Arquivo enviado: " + nome);
     }

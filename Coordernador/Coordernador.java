@@ -258,7 +258,7 @@ public class Coordernador {
             }
             clienteOut.flush();
 
-            // registros.remove(id);
+            registros.remove(registro);
             System.out.println("[Coordenador] DOWNLOAD repassado com sucesso e registro removido: ID= " + id);
 
         } catch (IOException e) {
