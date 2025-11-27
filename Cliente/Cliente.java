@@ -174,7 +174,7 @@ public class Cliente {
 
                 String resposta = in.readUTF();
                 if (!"OK".equals(resposta)) {
-                    System.out.println("Arquivo não encontrado ou erro: " + resposta);
+                    System.out.println(resposta);
                     return;
                 }
                 // Nome arquivo salvo no servidor.

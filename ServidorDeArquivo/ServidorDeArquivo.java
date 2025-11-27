@@ -2,6 +2,7 @@ package ServidorDeArquivo;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -9,6 +10,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.InputMismatchException;
@@ -65,8 +68,8 @@ public class ServidorDeArquivo {
             return;
         }
         try (Socket socket = new Socket(ipCoordenador, porta_controle);
-                java.io.PrintWriter out = new java.io.PrintWriter(socket.getOutputStream(), true);
-                java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(socket.getInputStream()))) {
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
             out.println("CADASTRAR_SERVIDOR_DE_ARQUIVOS:" + porta_dados);
 
@@ -90,8 +93,8 @@ public class ServidorDeArquivo {
         }
         // Envia solicitação de descadastro para o Coordenador
         try (Socket socket = new Socket(ipCoordenador, porta_controle);
-                java.io.PrintWriter out = new java.io.PrintWriter(socket.getOutputStream(), true);
-                java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(socket.getInputStream()))) {
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
             out.println("DESCADASTRAR_SERVIDOR_DE_ARQUIVOS:" + porta_dados);
             String resposta = in.readLine();

@@ -8,6 +8,7 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ public class Coordernador {
 
     private void tratarControle(Socket socket) {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                java.io.PrintWriter out = new java.io.PrintWriter(socket.getOutputStream(), true)) {
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
             String linha = in.readLine();
             if (linha == null) {
                 out.println("ERRO: vazio");
@@ -185,7 +186,7 @@ public class Coordernador {
     }
 
     private void processarListagem(DataInputStream clienteIn, DataOutputStream clienteOut) throws IOException {
-        System.out.println(servidores);
+        System.out.println("[Coordenador] lista de servidores cadastrados: " + servidores);
         try {
             String usuario = clienteIn.readUTF();
             // contar somente registros do usuario
@@ -195,7 +196,7 @@ public class Coordernador {
                     lista.add(r);
                 }
             }
-            System.out.println(lista.toString());
+            System.out.println("[Coordenador] lista de registros do usuário: " + lista.toString());
             clienteOut.writeInt(lista.size());
             for (RegistroArquivo r : lista) {
                 clienteOut.writeInt(r.getId());

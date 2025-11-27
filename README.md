@@ -71,6 +71,6 @@ Dicas de depuração
 
 Contribuidores
 --------------
-- (Adicione aqui os nomes dos membros do grupo)
-
-Se quiser, eu também gero um `protocol.md` com descrição formal de cada mensagem ou aplico melhorias opcionais (persistência ou sincronização de coleções). Diga o que prefere.
+- Calebe Almeida Melo
+- Vínicius Gonçalves de Oliveira
+- Inti Gonzalo Leonelo Cavieres Castro
