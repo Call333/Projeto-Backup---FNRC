@@ -22,10 +22,10 @@ javac -d out Cliente/Cliente.java Coordernador/*.java ServidorDeArquivo/Servidor
 
 Executar (fluxo de teste mínimo)
 --------------------------------
-1) Iniciar o Coordenador (em um terminal):
+1) Iniciar o Coordenador com permissão de administrador(em um terminal):
 
 ```bash
-java -cp out Coordernador.Coordernador
+sudo java -cp out Coordernador.Coordernador
 ```
 
 2) Iniciar um Servidor de Arquivos (outro terminal):
