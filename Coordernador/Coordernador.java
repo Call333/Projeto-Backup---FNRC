@@ -44,27 +44,50 @@ public class Coordernador {
     }
 
     private void tratarControle(Socket socket) {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                java.io.PrintWriter out = new java.io.PrintWriter(socket.getOutputStream(), true)) {
             String linha = in.readLine();
-            
+            if (linha == null) {
+                out.println("ERRO: vazio");
+                return;
+            }
+
             // Seperando a msg do serv de arquivos em "Comando" e "Porta".
             String[] msg = linha.split(":");
+            if (msg.length < 2) {
+                out.println("ERRO: formato_invalido");
+                return;
+            }
             String comando = msg[0];
-            int porta = Integer.parseInt(msg[1]);
+            int porta;
+            try {
+                porta = Integer.parseInt(msg[1]);
+            } catch (NumberFormatException nfe) {
+                out.println("ERRO: porta_invalida");
+                return;
+            }
             String host = socket.getInetAddress().getHostAddress();
             ServidorInfo sInfo = new ServidorInfo(host, porta);
-            
+
             if (comando.equals("CADASTRAR_SERVIDOR_DE_ARQUIVOS")) {
                 servidores.add(sInfo);
                 System.out.println("[Coordenador] Servidor de Arquivos registrado: " + host + " | " + porta);
+                out.println("OK");
             } else if (comando.equals("DESCADASTRAR_SERVIDOR_DE_ARQUIVOS")) {
-                servidores.remove(sInfo);
-                System.out.println("[Coordenador] Servidor de Arquivos removido: " + host + " | " + porta);
+                boolean removed = servidores.remove(sInfo);
+                if (removed) {
+                    System.out.println("[Coordenador] Servidor de Arquivos removido: " + host + " | " + porta);
+                    out.println("OK");
+                } else {
+                    System.out.println("[Coordenador] Tentativa de remover servidor não cadastrado: " + host + " | " + porta);
+                    out.println("ERRO: nao_cadastrado");
+                }
             } else {
                 System.out.println("[Coordenador] Comando desconhecido");
+                out.println("ERRO: comando_desconhecido");
             }
         } catch (Exception e) {
-            System.out.println("Erro inesperado...");
+            System.out.println("Erro inesperado..." + e.getMessage());
         }
     }
 
@@ -269,14 +292,13 @@ public class Coordernador {
       }
     
     private ServidorInfo servidorDestino(List<ServidorInfo> servidores){
-        ServidorInfo acessoMenosRecente = servidores.get(0);
-
         if(servidores.isEmpty()) {
             return null;
         }
 
-        for (ServidorInfo servidor : servidores) { 
-            if(servidor.getUltimoAcesso().isBefore(acessoMenosRecente.getUltimoAcesso())) {
+        ServidorInfo acessoMenosRecente = servidores.get(0);
+        for (ServidorInfo servidor : servidores) {
+            if (servidor.getUltimoAcesso().isBefore(acessoMenosRecente.getUltimoAcesso())) {
                 acessoMenosRecente = servidor;
             }
         }

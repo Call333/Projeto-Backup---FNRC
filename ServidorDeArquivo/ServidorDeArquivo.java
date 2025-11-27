@@ -2,7 +2,6 @@ package ServidorDeArquivo;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -10,7 +9,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.InputMismatchException;
@@ -67,13 +65,18 @@ public class ServidorDeArquivo {
             return;
         }
         try (Socket socket = new Socket(ipCoordenador, porta_controle);
-                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
+                java.io.PrintWriter out = new java.io.PrintWriter(socket.getOutputStream(), true);
+                java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(socket.getInputStream()))) {
 
-            out.write("CADASTRAR_SERVIDOR_DE_ARQUIVOS:" + porta_dados);
-            out.flush();
+            out.println("CADASTRAR_SERVIDOR_DE_ARQUIVOS:" + porta_dados);
 
-            cadastrado = true;
-            System.out.println("[Servidor] Cadastro no Coordenador.");
+            String resposta = in.readLine();
+            if (resposta != null && resposta.startsWith("OK")) {
+                cadastrado = true;
+                System.out.println("[Servidor] Cadastro no Coordenador confirmado.");
+            } else {
+                System.out.println("[Servidor] Cadastro não confirmado pelo Coordenador: " + resposta);
+            }
 
         } catch (IOException e) {
             System.out.println("[Servidor] Não foi possível cadastrar no Coordenador: " + e.getMessage());
@@ -87,13 +90,17 @@ public class ServidorDeArquivo {
         }
         // Envia solicitação de descadastro para o Coordenador
         try (Socket socket = new Socket(ipCoordenador, porta_controle);
-                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
+                java.io.PrintWriter out = new java.io.PrintWriter(socket.getOutputStream(), true);
+                java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(socket.getInputStream()))) {
 
-            out.write("DESCADASTRAR_SERVIDOR_DE_ARQUIVOS:" + porta_dados);
-            out.flush();
-
-            cadastrado = false;
-            System.out.println("[Servidor] Descadastro do Coordenador.");
+            out.println("DESCADASTRAR_SERVIDOR_DE_ARQUIVOS:" + porta_dados);
+            String resposta = in.readLine();
+            if (resposta != null && resposta.startsWith("OK")) {
+                cadastrado = false;
+                System.out.println("[Servidor] Descadastro confirmado pelo Coordenador.");
+            } else {
+                System.out.println("[Servidor] Falha no descadastro: " + resposta);
+            }
 
         } catch (IOException e) {
             System.out.println("[Servidor] Falha ao descadastrar: " + e.getMessage());
@@ -120,7 +127,7 @@ public class ServidorDeArquivo {
             }
 
             if (cmd.equals("shutdown")) {
-                descadastrarNoCoordenador(cmd);
+                descadastrarNoCoordenador(ipCoordenador);
                 estaAtivo = false;
                 break;
             }
@@ -142,6 +149,7 @@ public class ServidorDeArquivo {
                     break;
                 case "RECUPERAR_ARQUIVOS":
                     recuperaArquivos(in, out);
+                    break;
                 default:
                     out.writeUTF("ERRO: Comando invalido.");
                     out.flush();
